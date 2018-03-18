@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="worktime">
+     
+     <select id="selectSawonInfo" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+				   SELECT T1.SAWON_NO, T1.SAWON_NM, HP_TEL 
+					      ,TO_CHAR(T2.START_DT,'YYYY/MM/DD HH24:MI:SS') AS START_DT
+					      ,TO_CHAR(T2.END_DT,'YYYY/MM/DD HH24:MI:SS') AS END_DT
+					      ,TO_CHAR(SYSDATE,'YYYY-MM-DD (DY)') AS CURR_DATE
+					      ,TO_CHAR((CASE WHEN NVL(T2.START_DT,TRUNC(SYSDATE)) <> TRUNC(SYSDATE) THEN 1 ELSE 0 END +
+					        CASE WHEN NVL(T2.END_DT,TRUNC(SYSDATE))   <> TRUNC(SYSDATE) THEN 2 ELSE 0 END ),'9') AS STATUS
+					FROM   TBSY_SAWON_INFO T1, TBPY_WORKTIME T2
+					WHERE  T1.HP_TEL 		= #{HP_TEL}
+					AND    T1.SAWON_NO 		= T2.SAWON_NO(+)
+					AND    TO_CHAR(T2.START_DT(+),'YYYYMMDD') = TO_CHAR(SYSDATE,'YYYYMMDD')
+        ]]>
+    </select>
+     
+     <insert id="regStart" parameterType="hashmap" >
+        <![CDATA[
+				   INSERT INTO TBPY_WORKTIME(SAWON_NO,START_DT,END_DT,GUBUN_CD,REMARKS,ACCEPT_IP,CAUSE)
+				                      VALUES( #{SAWON_NO}
+				                            ,SYSDATE
+				                            ,NULL
+				                            ,CASE WHEN TO_CHAR(SYSDATE,'D')='1' OR TO_CHAR(SYSDATE,'D')=7 THEN 'WT02' ELSE 'WT01' END
+				                            ,NULL
+				                            ,#{ACCEPT_IP}
+				                            ,NULL ) 
+        ]]>
+    </insert>
+    
+     
+     <update id="regEnd" parameterType="hashmap" >
+        <![CDATA[
+				   UPDATE TBPY_WORKTIME
+				      SET END_DT   = SYSDATE
+				   WHERE  SAWON_NO = #{SAWON_NO} 
+				     AND  TO_CHAR(START_DT,'YYYYMMDD') = TO_CHAR(SYSDATE,'YYYYMMDD')
+        ]]>
+    </update>
+    
+     
+</mapper>

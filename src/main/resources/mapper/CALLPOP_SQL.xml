@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<mapper namespace="callpop">
+     
+     <update id="regUserInfo" parameterType="hashmap" >
+        <![CDATA[
+			MERGE INTO CALLPOP_USER_INFO TT
+			USING (
+			         SELECT  #{PHONE_NO} AS PHONE_NO
+			                ,#{USER_ID} AS USER_ID
+			                ,#{NICKNAME} AS NICKNAME
+			                ,#{IMAGE_PATH} AS IMAGE_PATH
+			                ,SYSDATE AS REGI_DT
+			         FROM   DUAL
+			       ) ST
+			ON    (TT.PHONE_NO = ST.PHONE_NO)
+			WHEN MATCHED THEN
+			UPDATE SET TT.USER_ID     = ST.USER_ID
+			          ,TT.NICKNAME    = ST.NICKNAME
+			          ,TT.IMAGE_PATH  = ST.IMAGE_PATH
+			          ,TT.LAST_MOD_DT = ST.REGI_DT
+			WHEN NOT MATCHED THEN
+			INSERT(PHONE_NO, USER_ID, NICKNAME, IMAGE_PATH, REGI_DT, LAST_MOD_DT)
+			VALUES(ST.PHONE_NO, ST.USER_ID, ST.NICKNAME, ST.IMAGE_PATH, ST.REGI_DT, ST.REGI_DT)
+        ]]>
+    </update>
+
+     <select id="getCallLocation" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+				   SELECT CURR_LNG
+				        , CURR_LAT
+				        , CURR_ADDRESS
+					FROM  CALLPOP_USER_INFO
+					WHERE PHONE_NO  = #{PHONE_NO}
+        ]]>
+    </select>
+      
+     
+     <insert id="regSendInfo" parameterType="hashmap" >
+        <![CDATA[
+			 INSERT INTO CALLPOP_LOC_SEND (SEQ
+                             ,PHONE_NO
+                             ,SENDER_NAME
+                             ,RECEIVER_NO
+                             ,RECEIVER_NAME
+                             ,LAT
+                             ,LNG
+                             ,ADDRESS
+                             ,SEND_DT)
+                      VALUES (CURRENT_TIMESTAMP
+                             ,#{PHONE_NO}
+                             ,#{SENDER_NAME}
+                             ,#{RECEIVER_NO}
+                             ,#{RECEIVER_NAME}
+                             ,#{LAT}
+                             ,#{LNG}
+                             ,#{ADDRESS}
+                             ,TO_CHAR(SYSDATE,'YYYYMMDD'))
+        ]]>
+    </insert>
+    
+    <select id="getSendList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+				   SELECT  RECEIVER_NO
+                          ,RECEIVER_NAME
+                          ,LAT
+                          ,LNG
+                          ,ADDRESS
+                          ,SEND_DT
+					FROM  CALLPOP_LOC_SEND
+					WHERE PHONE_NO  = #{PHONE_NO}
+					AND   ROWNUM <= 3
+				    ORDER BY SEQ DESC
+        ]]>
+    </select>
+    
+    <select id="getReceiveList" parameterType="hashmap" resultType="hashmap">
+        <![CDATA[
+				   SELECT  PHONE_NO
+                          ,SENDER_NAME
+                          ,LAT
+                          ,LNG
+                          ,ADDRESS
+                          ,SEND_DT
+					FROM  CALLPOP_LOC_SEND
+					WHERE RECEIVER_NO  = #{PHONE_NO}
+					AND   ROWNUM <= 3
+				    ORDER BY SEQ DESC
+        ]]>
+    </select>
+    
+     <update id="regMyLocation" parameterType="hashmap" >
+        <![CDATA[
+			 UPDATE CALLPOP_USER_INFO
+			 SET    CURR_LNG = #{CURR_LNG}
+			      , CURR_LAT = #{CURR_LAT}
+			      , CURR_ADDRESS = #{CURR_ADDRESS}
+			 WHERE PHONE_NO = #{PHONE_NO}
+        ]]>
+    </update>
+    
+     
+</mapper>
